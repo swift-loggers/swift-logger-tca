@@ -45,6 +45,7 @@ private struct OverrideLogger: Logger {
     func log(
         _: LoggerLevel,
         _: LoggerDomain,
-        _: @autoclosure @escaping @Sendable () -> String
+        _: @autoclosure @escaping @Sendable () -> LogMessage,
+        attributes _: @autoclosure @escaping @Sendable () -> [LogAttribute]
     ) {}
 }

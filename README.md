@@ -9,9 +9,8 @@ through a `LoggerKey` and a `DependencyValues.logger` extension, so
 TCA reducers and any other code using `@Dependency` can read and
 override the logger.
 
-Requires Swift 6.0+. MIT licensed.
-
-Pre-release. The first tagged version will be `0.1.0`.
+Requires Swift 6.0+. MIT licensed. Pre-release; the first tagged
+version will be `0.1.0`.
 
 > This package is **not** an adapter for
 > [`apple/swift-log`](https://github.com/apple/swift-log). It integrates
@@ -40,48 +39,83 @@ let package = Package(
 ```
 
 `import LoggerLibraryTCA` re-exports `Loggers`, `LoggerPrint`, and
-`LoggerNoOp`, so the protocol, `LoggerLevel`, `LoggerDomain`,
-`PrintLogger`, and `NoOpLogger` are all available without additional
-imports. `ComposableArchitecture` is **not** a runtime dependency of
-this package; consumers using TCA add it to their own `Package.swift`
-and `import ComposableArchitecture` alongside `import LoggerLibraryTCA`.
+`LoggerNoOp`. `ComposableArchitecture` is **not** a runtime dependency
+of this package; consumers add it to their own `Package.swift`.
 
 ## Usage
 
-Read the logger from a TCA reducer via `@Dependency(\.logger)`. This
-example is the same code exercised in
-`Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift`:
+Read the logger from a TCA reducer via `@Dependency(\.logger)`. A
+single reducer typically logs both plain lifecycle events and
+structured operational events; both shapes go through the same
+`logger` instance:
 
 ```swift
 import ComposableArchitecture
 import LoggerLibraryTCA
 
 extension LoggerDomain {
-    static let app: LoggerDomain = "App"
+    static let auth: LoggerDomain = "Auth"
 }
 
 @Reducer
-struct Feature {
+struct AuthFeature {
     @ObservableState
-    struct State: Equatable {}
+    struct State: Equatable {
+        var username: String = ""
+    }
 
     enum Action {
         case appeared
+        case usernameChanged(String)
+        case signInTapped(username: String, password: String)
     }
 
     @Dependency(\.logger) var logger
 
     var body: some ReducerOf<Self> {
-        Reduce { _, action in
+        Reduce { state, action in
             switch action {
             case .appeared:
-                logger.info(.app, "Feature appeared")
+                logger.info(.auth, "Sign-in screen appeared")
+                return .none
+
+            case .usernameChanged(let username):
+                state.username = username
+                logger.debug(
+                    .auth,
+                    "Username input changed for \(username, privacy: .private)"
+                )
+                return .none
+
+            case .signInTapped(let username, _):
+                logger.info(
+                    .auth,
+                    "Sign-in submitted",
+                    attributes: [
+                        LogAttribute("auth.method", "password"),
+                        LogAttribute("auth.username", username, privacy: .private)
+                    ]
+                )
+                // Password is bound to `_` so the reducer never even names
+                // it; an effect would forward (username, password) to an
+                // auth client, which owns the network call and any
+                // HTTP-level logging.
                 return .none
             }
         }
     }
 }
 ```
+
+The full `Logger` API (privacy-aware string interpolation,
+structured `attributes`, severity levels, custom domains) is
+documented in
+[swift-loggers/swift-logger](https://github.com/swift-loggers/swift-logger);
+this package does not re-define it. One TCA-specific note: `state`
+is `inout` inside `Reduce`, so a value referenced by the message or
+attributes autoclosures must be copied to a local constant first --
+the autoclosures are `@Sendable` and cannot capture the `inout`
+parameter.
 
 ## Defaults
 
@@ -94,91 +128,21 @@ struct Feature {
 | `previewValue` | `PrintLogger` | `.debug` |
 
 `testValue` is `NoOpLogger` so suite output stays focused on assertion
-failures. `previewValue` is verbose so Xcode previews surface
-diagnostic logs while iterating on UI.
+failures. `previewValue` is verbose so previews surface diagnostic
+logs while iterating on UI.
 
-## Testing a reducer with a fixture logger
+## Testing
 
-Override the logger for a single scope by injecting a fixture through
-`TestStore.withDependencies`. The fixture below records every emitted
-line so the test can assert the exact output. This snippet lives
-verbatim in `Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift`:
-
-```swift
-import ComposableArchitecture
-import Foundation
-import LoggerLibraryTCA
-import Testing
-
-extension LoggerDomain {
-    fileprivate static let app: LoggerDomain = "App"
-}
-
-@Reducer
-private struct Feature {
-    @ObservableState
-    struct State: Equatable {}
-
-    enum Action {
-        case appeared
-    }
-
-    @Dependency(\.logger) var logger
-
-    init() {}
-
-    var body: some ReducerOf<Self> {
-        Reduce { _, action in
-            switch action {
-            case .appeared:
-                logger.info(.app, "Feature appeared")
-                return .none
-            }
-        }
-    }
-}
-
-private final class RecordingLogger: Logger, @unchecked Sendable {
-    private let lock = NSLock()
-    private var storedLines: [String] = []
-
-    var lines: [String] {
-        lock.lock()
-        defer { lock.unlock() }
-        return storedLines
-    }
-
-    func log(
-        _ level: LoggerLevel,
-        _ domain: LoggerDomain,
-        _ message: @autoclosure @escaping @Sendable () -> String
-    ) {
-        guard level != .disabled else { return }
-        let rendered = "\(level) [\(domain)] \(message())"
-        lock.lock()
-        defer { lock.unlock() }
-        storedLines.append(rendered)
-    }
-}
-
-@Test
-func featureLogsOnAppear() async {
-    let logger = RecordingLogger()
-    let store = await TestStore(initialState: Feature.State()) {
-        Feature()
-    } withDependencies: {
-        $0.logger = logger
-    }
-
-    await store.send(.appeared)
-
-    #expect(logger.lines == ["info [App] Feature appeared"])
-}
-```
+Override the logger for a single scope through
+`TestStore.withDependencies` and assert against a recording fixture.
+The reducer + test pair, including both a plain-string `.appeared`
+case and a structured `.signInTapped` case, lives verbatim in
+[`Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift`](Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift).
 
 ## Companion packages
 
 - [`swift-loggers/swift-logger`](https://github.com/swift-loggers/swift-logger)
-  — protocol-only core plus `PrintLogger`, `DomainFilteredLogger`,
-  `NoOpLogger`. Zero dependencies. Use it directly when you do not need
-  the TCA / swift-dependencies integration.
+  -- protocol-only core plus `PrintLogger`, `DomainFilteredLogger`,
+  `NoOpLogger`. No third-party dependencies (uses Foundation for
+  `Date`-backed payloads). Use it directly when you do not need the
+  TCA / swift-dependencies integration.
