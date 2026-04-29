@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-docc-plugin.git",
       "state" : {
-        "revision" : "e977f65879f82b375a044c8837597f690c067da6",
-        "version" : "1.4.6"
+        "revision" : "647c708be89f834fa6a6d4945442793a77ddf5b6",
+        "version" : "1.5.0"
       }
     },
     {
@@ -106,7 +106,7 @@
       "location" : "https://github.com/swift-loggers/swift-logger.git",
       "state" : {
         "branch" : "main",
-        "revision" : "b9907e9d66dbd788420f461d9f592cbc2cdc322a"
+        "revision" : "416432e1800b1b6cb71546546cbb663f263f8791"
       }
     },
     {
