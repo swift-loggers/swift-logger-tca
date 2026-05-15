@@ -1,0 +1,11 @@
+{
+  "extra_packages": [
+    {
+      "url": "https://github.com/pointfreeco/swift-composable-architecture.git",
+      "from": "1.0.0",
+      "products": [
+        {"name": "ComposableArchitecture", "package": "swift-composable-architecture"}
+      ]
+    }
+  ]
+}

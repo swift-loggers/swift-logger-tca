@@ -17,7 +17,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-loggers/swift-logger.git", branch: "main"),
+        .package(url: "https://github.com/swift-loggers/swift-logger.git", .upToNextMinor(from: "0.1.0")),
         .package(url: "https://github.com/pointfreeco/swift-dependencies.git", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.0.0")
