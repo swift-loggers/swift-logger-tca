@@ -56,7 +56,9 @@ private struct AuthFeature {
 
 private final class RecordingLogger: Logger, @unchecked Sendable {
     struct Entry: Equatable {
+        // periphery:ignore - read via synthesized Equatable
         let level: LoggerLevel
+        // periphery:ignore - read via synthesized Equatable
         let domain: LoggerDomain
         let renderedMessage: String
         let attributes: [LogAttribute]

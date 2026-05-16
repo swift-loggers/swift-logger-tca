@@ -12,6 +12,9 @@ override the logger.
 Requires Swift 6.0+. MIT licensed. Pre-release; the first tagged
 version will be `0.1.0`.
 
+API reference (DocC):
+[swift-loggers.github.io/swift-logger-tca](https://swift-loggers.github.io/swift-logger-tca/documentation/loggerlibrarytca/).
+
 > This package is **not** an adapter for
 > [`apple/swift-log`](https://github.com/apple/swift-log). It integrates
 > the `swift-loggers` family with
@@ -25,7 +28,10 @@ version will be `0.1.0`.
 let package = Package(
     name: "MyApp",
     dependencies: [
-        .package(url: "https://github.com/swift-loggers/swift-logger-tca.git", branch: "main")
+        .package(
+            url: "https://github.com/swift-loggers/swift-logger-tca.git",
+            .upToNextMinor(from: "0.1.0")
+        )
     ],
     targets: [
         .target(
