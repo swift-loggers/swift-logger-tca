@@ -24,7 +24,9 @@ API reference (DocC):
 ## Installation
 
 ```swift
-// In your Package.swift:
+// swift-tools-version: 6.0
+import PackageDescription
+
 let package = Package(
     name: "MyApp",
     dependencies: [
@@ -51,9 +53,9 @@ of this package; consumers add it to their own `Package.swift`.
 ## Usage
 
 Read the logger from a TCA reducer via `@Dependency(\.logger)`. A
-single reducer typically logs both plain lifecycle events and
-structured operational events; both shapes go through the same
-`logger` instance:
+single reducer can log both plain lifecycle events and structured
+operational events; both shapes go through the same `logger`
+instance resolved from `DependencyValues`:
 
 ```swift
 import ComposableArchitecture
@@ -121,7 +123,7 @@ this package does not re-define it. One TCA-specific note: `state`
 is `inout` inside `Reduce`, so a value referenced by the message or
 attributes autoclosures must be copied to a local constant first --
 the autoclosures are `@Sendable` and cannot capture the `inout`
-parameter.
+parameter directly.
 
 ## Defaults
 
@@ -134,21 +136,22 @@ parameter.
 | `previewValue` | `PrintLogger` | `.debug` |
 
 `testValue` is `NoOpLogger` so suite output stays focused on assertion
-failures. `previewValue` is verbose so previews surface diagnostic
-logs while iterating on UI.
+failures. `previewValue` is verbose by default so previews surface
+diagnostic logs while iterating on UI.
 
 ## Testing
 
 Override the logger for a single scope through
-`TestStore.withDependencies` and assert against a recording fixture.
-The reducer + test pair, including both a plain-string `.appeared`
-case and a structured `.signInTapped` case, lives verbatim in
+`TestStore.withDependencies` and assert against a recording fixture
+without changing the reducer under test. The reducer + test pair,
+including both a plain-string `.appeared` case and a structured
+`.signInTapped` case, lives verbatim in
 [`Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift`](Tests/LoggerLibraryTCATests/FeatureLoggingTests.swift).
 
 ## Companion packages
 
 - [`swift-loggers/swift-logger`](https://github.com/swift-loggers/swift-logger)
   -- protocol-only core plus `PrintLogger`, `DomainFilteredLogger`,
-  `NoOpLogger`. No third-party dependencies (uses Foundation for
-  `Date`-backed payloads). Use it directly when you do not need the
+  `NoOpLogger`. No third-party dependencies; uses Foundation for
+  `Date`-backed payloads. Use it directly when you do not need the
   TCA / swift-dependencies integration.
