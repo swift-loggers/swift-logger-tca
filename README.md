@@ -9,8 +9,8 @@ through a `LoggerKey` and a `DependencyValues.logger` extension, so
 TCA reducers and any other code using `@Dependency` can read and
 override the logger.
 
-Requires Swift 6.0+. MIT licensed. Pre-release; the first tagged
-version will be `0.1.0`.
+Requires Swift 6.0+. iOS 16+, tvOS 16+, macOS 13+, watchOS 9+, visionOS 1+.
+MIT licensed.
 
 API reference (DocC):
 [swift-loggers.github.io/swift-logger-tca](https://swift-loggers.github.io/swift-logger-tca/documentation/loggerlibrarytca/).
